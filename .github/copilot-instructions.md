@@ -33,14 +33,14 @@ The extension uses a multi-component architecture:
 
 2. **Content Scripts**
    - `cs.js` (44KB) - Injected into all web pages (`*://*/*`)
-   - `cs-openai.js` (5KB) - Specific to OpenAI domains
-   - `cs-web.js` (5KB) - Specific to harpa.ai domains
+   - `cs-openai.js` (4.9KB) - Specific to OpenAI domains
+   - `cs-web.js` (4.9KB) - Specific to harpa.ai domains
    - Runs at `document_start` for all frames
 
 3. **Page Scripts** (Injected into page context)
    - `nj.js` (12KB) - Main injection script
    - `nj-engine.js` (127KB) - Engine components
-   - `nj-youtube.js` (7KB) - YouTube-specific functionality
+   - `nj-youtube.js` (6.7KB) - YouTube-specific functionality
    - `nj-chatgpt.js` (37KB) - ChatGPT integration
 
 4. **Popup/Panel UI**
@@ -209,11 +209,11 @@ When modifying this extension:
 
 /js/                       # Third-party libraries (2.2MB)
   ├── host.min.js          # Host script
-  ├── mammoth.browser.min.js  # DOCX parser (636KB)
-  ├── pdf.min.js           # PDF.js (286KB)
-  ├── pdf.worker.min.js    # PDF.js worker (1MB)
+  ├── mammoth.browser.min.js  # DOCX parser (621KB)
+  ├── pdf.min.js           # PDF.js (280KB)
+  ├── pdf.worker.min.js    # PDF.js worker (1.1MB)
   ├── timer-worker.min.js  # Timer worker
-  └── xlsx.mini.min.js     # Excel parser (280KB)
+  └── xlsx.mini.min.js     # Excel parser (274KB)
 
 /recipes/                  # Watcher recipes (24KB)
   ├── watcher.monitor-changes.recipe
