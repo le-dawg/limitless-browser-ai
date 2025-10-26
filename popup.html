@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Limitless Browser AI</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Limitless Browser AI</h1>
+      <p class="tagline">AI-powered browsing assistant</p>
+    </header>
+    
+    <main>
+      <div class="status-section">
+        <label class="toggle">
+          <input type="checkbox" id="enableToggle" checked>
+          <span class="toggle-label">Extension Enabled</span>
+        </label>
+      </div>
+      
+      <div class="action-section">
+        <button id="analyzeBtn" class="btn btn-primary">
+          Analyze Current Page
+        </button>
+        <button id="settingsBtn" class="btn btn-secondary">
+          Settings
+        </button>
+      </div>
+      
+      <div class="info-section">
+        <div id="status" class="status-message">Ready</div>
+      </div>
+    </main>
+    
+    <footer>
+      <p class="version">v1.0.0</p>
+    </footer>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
