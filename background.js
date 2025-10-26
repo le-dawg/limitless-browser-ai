@@ -25,8 +25,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   
   // Handle different message types
   if (request.action === 'processPage') {
-    // Process page content
-    sendResponse({ success: true, message: 'Page processing initiated' });
+    // Forward to content script in the specified tab
+    chrome.tabs.sendMessage(
+      request.tabId,
+      { action: 'analyzePage' },
+      (response) => {
+        if (chrome.runtime.lastError) {
+          console.error('Error sending message to content script:', chrome.runtime.lastError);
+          sendResponse({ success: false, error: chrome.runtime.lastError.message });
+        } else {
+          sendResponse(response);
+        }
+      }
+    );
+    return true; // Keep the message channel open for async response
   }
   
   return true; // Keep the message channel open for async response
