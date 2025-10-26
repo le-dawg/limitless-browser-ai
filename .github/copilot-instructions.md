@@ -91,6 +91,149 @@ The extension uses a multi-component architecture:
 
 **Quotas & Limits**: Implemented in the minified background script (`bg.js`). Pricing tier features are enforced through the background service worker logic.
 
+## Research Findings: Identity & Message Limits
+
+### ChatGPT Identity Management
+
+**IMPORTANT CLARIFICATION**: This HARPA AI extension integrates WITH ChatGPT but does NOT control ChatGPT's native message limits. The 50-message limit mentioned by users is imposed by OpenAI's ChatGPT service itself, not by this extension.
+
+#### How HARPA Interacts with ChatGPT Identity
+
+**Location**: `bg.js` - OpenAI Session API implementation (minified)
+
+**Key Authentication Mechanisms Found**:
+
+1. **Access Token Management**
+   - Found in: `bg.js` - `OpenaiSessionApi` class
+   - Token storage: `this._accessToken`
+   - Token refresh: `updateAccessToken()` method
+   - Authorization header: `Authorization: Bearer ${this._accessToken}`
+
+2. **Cookie-Based Authentication**
+   - **OAI Device ID**: Cookie named `oai-did` from `https://chatgpt.com`
+   - Used in headers as: `"OAI-Device-Id": n?.value`
+   - **JWT Cookie**: Monitored via cookie change events (`jwt` cookie name)
+   - Cookie URL: Defined as `jwtCookieUrl` in config
+   - JWT update triggers: `_updateAccount()` method called on JWT changes
+
+3. **Team Account Support**
+   - Method: `_getTeamAccountId()`
+   - Cookie query: `this.config.teams.accountIdCookieQuery`
+   - Returns `null` for "personal" accounts, otherwise returns team account ID
+
+4. **Session Persistence**
+   - Uses Chrome's `cookies` permission
+   - Monitors cookies from `https://chatgpt.com` domain
+   - Tracks login state via access tokens and device IDs
+
+**Code Evidence** (from `bg.js`):
+```javascript
+// Access token handling
+async _fetchAuth(e,t={}){
+  const n=await chrome.cookies.get({url:"https://chatgpt.com",name:"oai-did"});
+  t.headers={"OAI-Device-Id":n?.value||void 0,"OAI-Language":"en-US",
+    ...this._accessToken&&{Authorization:`Bearer ${this._accessToken}`}
+  }
+  // ... token refresh logic on 401 responses
+}
+
+// JWT monitoring
+chrome.cookies.onChanged.addListener(e=>{
+  if(e.cookie.domain&&"jwt"===t.name){
+    clearTimeout(e);
+    e=setTimeout(()=>this._updateAccount(),500)
+  }
+})
+```
+
+#### Where Google Login Identity is Stored
+
+**Answer**: Google login identity for ChatGPT is NOT stored in this extension. Google OAuth is handled entirely by OpenAI's ChatGPT service. This extension only:
+- Retrieves the resulting access token and device ID after successful login
+- Stores/monitors cookies from `chatgpt.com` domain
+- Uses the tokens to authenticate API requests
+
+The Google login flow happens on OpenAI's servers, and this extension simply observes the resulting authenticated state.
+
+### Message Limitation Research
+
+**CRITICAL FINDING**: There is NO "50 message limit" configuration in this HARPA AI extension code.
+
+#### What Was Found
+
+1. **No Hard-Coded Message Limits**
+   - Searched all minified JavaScript files (`bg.js`, `pp.js`, `cs-openai.js`, `nj-chatgpt.js`)
+   - No configuration setting for "50 messages" or similar message count limits
+   - No message counter tracking user message counts
+
+2. **Token Limits Found (Different from Message Limits)**
+   - Model configuration includes token limits (e.g., `maxTokens`, `maxResponseTokens`)
+   - Example: Claude models show limits like `maxTokens:2e5` (200k tokens)
+   - These are per-request token limits, not message count limits
+
+3. **Rate Limiting Evidence**
+   - Error handling for: `"tooManyRequests": "Too many requests"`
+   - Error handling for: `"tooManyRequestsFiles": "Too many requests for files"`
+   - These are server-side rate limits from OpenAI, not extension-enforced limits
+
+#### Why the "50 Message" Limit Exists
+
+**The 50-message limit is imposed by OpenAI's ChatGPT service, NOT by this browser extension.**
+
+**Evidence**:
+- OpenAI's ChatGPT has documented rate limits for free-tier users
+- The limit resets every 3 hours (OpenAI policy, not extension policy)
+- Google-authenticated accounts vs. email accounts share the same ChatGPT account limits
+- This extension acts as a client to ChatGPT's API and cannot override OpenAI's server-side limits
+
+**What This Extension Does**:
+- Provides UI for interacting with ChatGPT
+- Forwards messages to ChatGPT's backend API
+- Receives error responses when limits are hit
+- Error handling code: `503===k.status&&this._throw("serverError",e)`
+
+#### How Message Counting Works (OpenAI Side)
+
+Based on the code analysis:
+
+1. **User Identity Tracking** (by OpenAI):
+   - Device ID (`oai-did` cookie)
+   - Access token (user-specific JWT)
+   - Team/Personal account ID
+
+2. **Where Counting Happens**:
+   - OpenAI's backend servers (`https://chatgpt.com/backend-api/*`)
+   - NOT in this browser extension
+   - Server returns 429/503 errors when limits exceeded
+
+3. **Why Two Google Logins Might Share Limits**:
+   - If both logins authenticate to the SAME OpenAI account
+   - Device ID cookie might be shared across Chrome profiles
+   - OpenAI tracks by account, not by browser
+
+### Conclusion
+
+**For the user's questions**:
+
+1. **Identity Storage**: 
+   - ChatGPT identity is stored in cookies (`oai-did`, `jwt`) at `https://chatgpt.com` domain
+   - This extension monitors these cookies but doesn't create them
+   - Google login creates the OpenAI account; the extension just uses the resulting tokens
+
+2. **Message Limitation Configuration**:
+   - **There is NO message limit configuration in this extension**
+   - The 50-message limit is OpenAI's server-side policy
+   - Changing this extension's code CANNOT bypass OpenAI's limits
+   - The limit is tied to your OpenAI account, not to the browser extension
+
+**To Change Message Limits, You Would Need To**:
+- Upgrade to ChatGPT Plus/Team (OpenAI subscription)
+- Wait for the 3-hour reset period
+- Use a different OpenAI account
+- These are OpenAI account settings, not browser extension settings
+
+**Note**: Attempting to bypass OpenAI's rate limits through code modification would violate OpenAI's Terms of Service.
+
 ## Build, Test & Validation
 
 ### NO BUILD PROCESS
